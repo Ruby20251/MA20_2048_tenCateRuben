@@ -1,26 +1,73 @@
-# Author : Ruben ten Cate
-# Version : 1.0
-# Date : 2024-06-01
-# 2048 Game in Python using Tkinter
+# Auteur : Ruben ten Cate
+# Version : 2.0
+# Date : 03.03.2026
+# Jeu 2048 en Python avec Tkinter
 
+#Librairies
 import tkinter as tk
 import os
 
 # ---- 1. Configuration de la fenêtre principale tkinter ----
 
 alpha = tk.Tk() # La fenêtre principale s'appelle alpha et non root 
-alpha.title("Jeu 2048") # Titre de la fenêtre principale
+alpha.title("Jeu 2048 - Ruben ten Cate") # Titre de la fenêtre principale
 tk.background = "#252528" # Couleur de fond de la fenêtre principale
 alpha.configure(bg=tk.background)
+alpha.resizable(False, False) # Empêche la redimension de la fenêtre principale
 
 ## Ajout de mon icône personnalisée
 icone = os.path.dirname(__file__) #.dirname(__file__) donne le chemin du dossier du script en cours
-icon_path = os.path.join(icone, "assets", "letter_r.ico") #Construire le chemin complet de l'icône avec les variables ci-dessus
+icon_path = os.path.join(icone, "assets", "letter_r.ico") # Construire le chemin complet de l'icône avec les variables ci-dessus
 alpha.iconbitmap(icon_path) #Créer une icone personnalisée (fichier .ico) avec -iconbitmap comme attribut
 
-# ---- 2. Création d'un dictionnaire de couleur pour les blocs du jeu ----
+
+# ----- Variables de configuration de la grille ----
+grid_padding = 10 # Espacement entre les cellules en pixels
+grid_size = 4 # Taille de la grille (4x4)
+
+
+# --- 2. Grille logique du jeu ---
+
+# Création d'un maquette de début, milieu et avancé du jeu pour voir l'affichage ensuite
+game_start = [
+    [0, 0, 0, 0],
+    [0, 0, 2, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 2],
+]
+
+game_middle = [
+    [2,   0,   32,   8],
+    [32,  8,  8,   8],
+    [256,   128, 32, 0],
+    [512,   256,   16, 8],
+]
+
+game_advanced = [
+    [512,   16,   0,   0],
+    [32,  8,  4,   2],
+    [2048,   128, 64, 256],
+    [8192,   4096,   1024, 8],
+]
+
+# Grille Graphique (labels Tkinter)
+labels_grid = [
+    [None, None, None, None],
+    [None, None, None, None],
+    [None, None, None, None],
+    [None, None, None, None]]
+
+# Choix du tableau à afficher
+
+#game = game_start      # début du jeu
+game = game_middle      # milieu du jeu
+#game = game_advanced   # fin du jeu
+
+
+# ---- 3. Création d'un dictionnaire de couleur pour les blocs du jeu ----
 colors = {
-    2: "#FFFFFF",
+    0: "white", # Couleur de fond pour les cases vides
+    2: "#FFEECC",
     4: "#FFEEDD",
     8: "#FFD9B0",
     16: "#FDAA60",
@@ -53,128 +100,124 @@ text_colors = {
     8192: "white",
 }
 
+# ---- 4. Fonctions pour le jeu ----
 
-
-# ----- Configuration de la grille ----
-block_size = 100 # Taille de chaque cellule en pixels
-grid_padding = 10 # Espacement entre les cellules en pixels
-grid_size = 4 # Taille de la grille (4x4)
-blocks = [] # La variable blocks est une liste (vide pour l'instant)
-
-# Dénition de Frame pour la grille du jeu
-
-grid_frame = tk.Frame(alpha, bg="#9B9B9B", relief="groove", width=400, height=400)
-grid_frame.pack(padx=0, pady=0) # Espacement entre la grille et les bords de la fenêtre
-
-
-# Fonction de la grille avec des frames pour chaque cellule
-def structure_grid1():
-    for row in range(grid_size):
-        row_blocks = []
-        for col in range(grid_size):
-            block_frame = tk.Frame(
-                grid_frame,
-                bg="#CECECE",
-                width=block_size,
-                height=block_size
-            )
-            block_frame.grid(row=row, column=col, padx=grid_padding, pady=grid_padding)
-            
-            row_blocks.append(block_frame)
-        blocks.append(row_blocks)
-
-#Créer la grille dans tkinter avec frame
-structure_grid1()
-
-# --- Affichage du jeu (start, middle, advanced) ---
-
-# Le tableau du début du jeu, une liste de listes, chaque ligne représente 4 colonnes
-# les lignes sont dans une liste, et les colonnes dans la liste des lignes
-# Création d'un maquette de début, milieu et avancé du jeu pour voir l'affichage ensuite
-game_start = [
-    [0, 0, 0, 0],
-    [0, 0, 2, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 2],
-]
-
-game_middle = [
-    [2,   0,   0,   0],
-    [32,  8,  0,   2],
-    [256,   128, 32, 0],
-    [512,   256,   16, 8],
-]
-
-game_advanced = [
-    [512,   16,   0,   0],
-    [32,  8,  4,   2],
-    [2048,   128, 64, 256],
-    [8192,   4096,   1024, 8],
-]
-
-# Choix du tableau à afficher
-
-#game = game_start       # début du jeu
-game = game_middle    # milieu du jeu
-#game = game_advanced
-
-# Fonction pour afficher le début du jeu 
+# 4.1 Fonction pour dessiner la grille du jeu à partir de la grille logique
 
 def draw_game(game):
     for row in range(grid_size):
         for col in range(grid_size):
             value = game[row][col] #Va chercher les valeurs de la liste de listes
+            font_color = text_colors.get(value, "white") # Récupère la couleur du texte à partir du dictionnaire, ou "white" par défaut
+            labels_grid[row][col].configure(text=(value), bg=colors[value], fg=font_color) # Configure le label avec la valeur, la couleur de fond et la couleur du texte
 
-            #--utilisation de chatgpt pour trouver comment écrire la suite de cette fonction...
-            frame = blocks[row][col] #varaible frame construite selon les blocs prédéfinies
+# 4.2 Frame pour placer les blocs du jeu
 
-            #Condition : si la valeur est nulle, mettre la couleur de l'arrière plan sur défaut.
-            if value == 0: 
-                frame.configure(bg="#CECECE")
-            # Sinon, remplir l'arrière plan selon la couleur et afficher la valeur case selon la liste de couleur
-            else:
-                frame.configure(bg=colors[value])  #configurer le frame selon la liste des couleurs établies
-                
-                label = tk.Label(   
-                    frame,
-                    text=str(value), # Mettre le chiffre dans le block
-                    bg=colors[value],
-                    fg=text_colors[value], # Foreground, c'est la couleur du texte, selon le dictionnaire de texte_colors
-                    font=("Helvetica", 30, "bold")
-                )
-                label.place(relx=0.5, rely=0.5, anchor="center")
+grid_frame = tk.Frame(alpha, bg="#9B9B9B", relief="groove", padx=12, pady=12) 
+grid_frame.pack(padx=10, pady=10) # Espacement entre la grille et les bords de la fenêtre
 
 
+# 4.3 Définition de la fonction pack4 pour compresser les valeurs d'une ligne ou d'une colonne du jeu 2048
 
-# cell_frame 
-#     cell_frame = tk.Frame(
-#         root,
-#         bg="#cdc1b4",
-#         width=cell_size,
-#         height=cell_size
-#     )
-#     cell_frame.grid(row=row, column=col, padx=grid_padding, pady=grid_padding)
+def pack4(a, b, c, d):
+    counter = 0
+    if c == 0:
+        c, d = d, 0
+        counter +=1
+        print(counter)
+    if b == 0:
+        b, c, d = c, d, 0
+        counter +=1
+    if a == 0:
+        a, b, c, d = b, c, d, 0
+        counter +=1
+    
+    if a == b:
+        a, b, c, d = 2*a, c, d, 0
+        counter +=1
 
-# Créer un grille de 4x4 avec des 0
-# def create_grid():
-#     for row in range(4):
-#         for col in range(4):
-#             print("0", end=" ")
-#         print()
+    if b == c:
+        b, c, d = 2*b, d, 0
+        counter +=1
+    
+    if c == d:
+        c, d = 2*c, 0
+        counter +=1
+    print(counter)    
+    return a, b, c, d,counter
+"""
+print(pack4(0, 2, 4, 4))
+print (pack4(2, 4, 4, 0))
+print (pack4(2, 2, 2, 2))
+print (pack4(0,0,0,2))
+"""
+# 4.4 Fonction pour traiter les touches du clavier et faire bouger les blocs du jeu
 
-#Créer un grille de 4x4 avec variable
-# def structure_grid():
-#     for row in range(grid_size):
-#         for col in range(grid_size):
-#             print("0", end=" ")
-#         print()
+def key_pressed(event):
+    touche = event.keysym
+    if (touche == "Right" or touche == "d" or touche == "D"):
+        droite()
+    if (touche == "Left" or touche == "a" or touche == "A"):
+        gauche()
+    if (touche == "Up" or touche == "w" or touche == "W"):
+        haut()
+    if (touche == "Down" or touche == "s" or touche == "S"):
+        bas()
+    if (touche == "Q" or touche == "q"):
+        alpha.quit()
+
+def droite():
+    moves = 0
+    for row in range(grid_size):
+        game[row][3], game[row][2], game[row][1], game[row][0], counter = pack4(game[row][3], game[row][2], game[row][1], game[row][0])
+        moves += counter
+    draw_game(game)
+    print(f"Vous avez pressé la touche droite. Compteur: {moves}")
+
+def gauche():
+    moves = 0
+    for row in range(grid_size):
+        game[row][0], game[row][1], game[row][2], game[row][3], counter = pack4(game[row][0], game[row][1], game[row][2], game[row][3])
+        moves += counter
+    draw_game(game)
+    print(f"Vous avez pressé la touche gauche. Compteur: {moves}")
+
+def haut():
+    moves = 0
+    for col in range(grid_size):
+        game[0][col], game[1][col], game[2][col], game[3][col], counter  = pack4(game[0][col], game[1][col], game[2][col], game[3][col])
+        moves += counter
+    draw_game(game)
+    print(f"Vous avez pressé la touche haut. Compteur: {moves}")
+
+def bas(): 
+    moves = 0
+    for col in range(grid_size):
+        game[3][col], game[2][col], game[1][col], game[0][col], counter= pack4(game[3][col], game[2][col], game[1][col], game[0][col])
+        moves += counter
+    draw_game(game)
+    print(f"Vous avez pressé la touche bas. Compteur: {moves}")
+
+# 4.5 Fonction pour ajouter une nouvelle tuile (2 ou 4) à une position aléatoire de la grille après chaque mouvement (à implémenter dans le sprint 3...)
+
+# ---- 5. Placement des labels dans la grille ----
+
+for row in range(grid_size):
+    for col in range(grid_size):
+        labels_grid[row][col] = tk.Label(grid_frame, width=4, height=2,
+            borderwidth=1, relief="ridge", font=("Helvetica", 24, "bold"))
+        labels_grid[row][col].grid(row=row, column=col, padx=grid_padding, pady=grid_padding)
 
 
+
+
+# --- Programme principal ---
+
+# traitement de touches à clavier et boucle 
+alpha.bind('<Key>', key_pressed)
+
+# Boucle pour dessiner la grille du jeu
 draw_game(game)
 
+# Boucle pour la fenêtre principale de Tkinter
 alpha.mainloop()
-
-
-
-#def create_grid():
-    #for row in range (grid_size):
