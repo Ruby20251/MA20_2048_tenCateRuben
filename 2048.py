@@ -6,6 +6,7 @@
 #Librairies
 import tkinter as tk
 import os
+import random as rand
 
 # ---- 1. Configuration de la fenêtre principale tkinter ----
 
@@ -119,42 +120,85 @@ grid_frame.pack(padx=10, pady=10) # Espacement entre la grille et les bords de l
 
 # 4.3 Définition de la fonction pack4 pour compresser les valeurs d'une ligne ou d'une colonne du jeu 2048
 
-def pack4(a, b, c, d):
-    counter = 0
+def pack4(a, b, c, d): 
+
+    # Déplacement des mouvement vers la gauche
+    
+    # si c est égal à zéro, décalage de d vers c et mise à zéro de d
     if c == 0:
         c, d = d, 0
-        counter +=1
-        print(counter)
+
+    # si b est égal à zéro, décalage de c vers b et de d vers c, et mise à zéro de d
     if b == 0:
         b, c, d = c, d, 0
-        counter +=1
-    if a == 0:
+
+    # si a est égal à zéro, décalage de b vers a, de c vers b et de d vers c, et mise à zéro de d
+    if a == 0:    
         a, b, c, d = b, c, d, 0
-        counter +=1
     
+    # si a est égal à b, a = 2*a, puis b est mis à zéro, puis on décale c vers b et d vers c, et mise à zéro de d
     if a == b:
         a, b, c, d = 2*a, c, d, 0
-        counter +=1
 
+    # si b est égal à c, b =  c à zéro, puis on décale d vers c et mise à zéro de d
     if b == c:
         b, c, d = 2*b, d, 0
-        counter +=1
     
+    # si c est égal à d, on les combine en doublant c et en mettant d à zéro
     if c == d:
         c, d = 2*c, 0
-        counter +=1
-    print(counter)    
-    return a, b, c, d,counter
+
+    return a, b, c, d # Retourne les valeurs compressées après le déplacement et la fusion des blocs selon les règles du jeu 2048
 """
 print(pack4(0, 2, 4, 4))
 print (pack4(2, 4, 4, 0))
 print (pack4(2, 2, 2, 2))
 print (pack4(0,0,0,2))
 """
-# 4.4 Fonction pour traiter les touches du clavier et faire bouger les blocs du jeu
 
+# 4.4 Fonction pour générer une valeur aléatoire pour la nouvelle tuile (2 ou 4) / sprint 3
+def valeur_tuile_aleatoire():
+    rand_num = rand.randint(1, 100) # Génère un nombre aléatoire entre 1 et 100
+    if rand_num <= 80: # 80% de chances d'obtenir une tuile de valeur 2
+        return 2
+    else: # 20% de chances d'obtenir une tuile de valeur 4
+        return 4
+    
+
+# 4.5 Fonction nouvelle tuile / sprint 3
+def new_tile():
+
+    list_Null = [] # Liste pour stocker les positions des cases vides (valeur 0) dans la grille
+    
+    # Parcours de la grille pour trouver les cases vides (valeur Null ou 0)
+    for line in range (grid_size):
+        for col in range (grid_size):
+            
+            # Si la case est vide (valeur 0), on ajoute sa position à la liste des cases vides
+            if game[line][col] == 0:
+                list_Null.append((line, col)) # Créer un tuple des cases vides (ligne, colonne))
+                print("case vide trouvée à la position :", (line, col)) # Affiche la position de la case vide trouvée dans la console pour le débogage
+                
+                # Si il n'y a pas de cases vides, on ne peut pas ajouter de nouvelle tuile
+                if len(list_Null) == 0: 
+                    return
+                
+    # choix aléatoire d'une position parmi le tuple des cases vides
+    line, col = rand.choice(list_Null)
+
+    # Choix aléatoire de la valeur de la nouvelle tuile (2 ou 4) avec la fonction valeur_tuile_aleatoire()
+    new_tile_value = valeur_tuile_aleatoire()
+
+    # Placer la nouvelle tuile dans la grille logique à la position choisie 
+    game[line][col] = new_tile_value
+
+    draw_game(game) # Mise à jour de la grille graphique 
+    
+
+# 4.6 Fonction pour traiter les touches du clavier et faire bouger les blocs du jeu
 def key_pressed(event):
     touche = event.keysym
+    mem_game = [ligne[:] for ligne in game] # Crée une copie de la grille actuelle pour comparer après le mouvement 
     if (touche == "Right" or touche == "d" or touche == "D"):
         droite()
     if (touche == "Left" or touche == "a" or touche == "A"):
@@ -163,42 +207,47 @@ def key_pressed(event):
         haut()
     if (touche == "Down" or touche == "s" or touche == "S"):
         bas()
+    print (game)
+    print (mem_game)
+
+    # Si la grille a changé après le mouvement, on ajoute une nouvelle tuile avec la fonction new_tile()
+    if mem_game != game:
+        new_tile()
+        print("nouvelle tuile ajoutée")
+
     if (touche == "Q" or touche == "q"):
         alpha.quit()
 
+# -- 4.7 Fonctions pour compresser les valeurs dans la bonne direction --
+
+# Fonction pour le bouton droite en intégrant pack4
 def droite():
-    moves = 0
     for row in range(grid_size):
-        game[row][3], game[row][2], game[row][1], game[row][0], counter = pack4(game[row][3], game[row][2], game[row][1], game[row][0])
-        moves += counter
+        game[row][3], game[row][2], game[row][1], game[row][0] = pack4(game[row][3], game[row][2], game[row][1], game[row][0])
+    
     draw_game(game)
-    print(f"Vous avez pressé la touche droite. Compteur: {moves}")
 
+# Fonction pour le bouton gauche en intégrant pack4
 def gauche():
-    moves = 0
     for row in range(grid_size):
-        game[row][0], game[row][1], game[row][2], game[row][3], counter = pack4(game[row][0], game[row][1], game[row][2], game[row][3])
-        moves += counter
+        game[row][0], game[row][1], game[row][2], game[row][3] = pack4(game[row][0], game[row][1], game[row][2], game[row][3])
+        
     draw_game(game)
-    print(f"Vous avez pressé la touche gauche. Compteur: {moves}")
-
+    
+#Fonction pour le bouton haut en intégrant pack4
 def haut():
-    moves = 0
+    
     for col in range(grid_size):
-        game[0][col], game[1][col], game[2][col], game[3][col], counter  = pack4(game[0][col], game[1][col], game[2][col], game[3][col])
-        moves += counter
+        game[0][col], game[1][col], game[2][col], game[3][col]  = pack4(game[0][col], game[1][col], game[2][col], game[3][col])
+        
     draw_game(game)
-    print(f"Vous avez pressé la touche haut. Compteur: {moves}")
 
+#Fonction pour le bouton bas en intégrant pack4
 def bas(): 
-    moves = 0
     for col in range(grid_size):
-        game[3][col], game[2][col], game[1][col], game[0][col], counter= pack4(game[3][col], game[2][col], game[1][col], game[0][col])
-        moves += counter
-    draw_game(game)
-    print(f"Vous avez pressé la touche bas. Compteur: {moves}")
+        game[3][col], game[2][col], game[1][col], game[0][col]= pack4(game[3][col], game[2][col], game[1][col], game[0][col])
 
-# 4.5 Fonction pour ajouter une nouvelle tuile (2 ou 4) à une position aléatoire de la grille après chaque mouvement (à implémenter dans le sprint 3...)
+    draw_game(game)
 
 # ---- 5. Placement des labels dans la grille ----
 
@@ -207,8 +256,6 @@ for row in range(grid_size):
         labels_grid[row][col] = tk.Label(grid_frame, width=4, height=2,
             borderwidth=1, relief="ridge", font=("Helvetica", 24, "bold"))
         labels_grid[row][col].grid(row=row, column=col, padx=grid_padding, pady=grid_padding)
-
-
 
 
 # --- Programme principal ---

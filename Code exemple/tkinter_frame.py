@@ -19,3 +19,7 @@ for row in range(3):
         cell.grid(row=row, column=col, padx=5, pady=5)
 
 root.mainloop()
+
+# Les styles de relief Tkinter 
+# flat, raised, sunken, groove, ridge
+

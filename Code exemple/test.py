@@ -31,9 +31,8 @@ def pack4(a, b, c, d):
         
     return a, b, c, d
 
-
-print(pack4(0, 2, 4, 4))
-print (pack4(2, 4, 4, 0))
-print (pack4(2, 2, 2, 2))
+# print(pack4(0, 2, 4, 4))
+# print (pack4(2, 4, 4, 0))
+# print (pack4(2, 2, 2, 2))
 
 

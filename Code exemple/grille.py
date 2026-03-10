@@ -46,6 +46,27 @@ root = tk.Tk()
 root.title("Exemple Label")
 root.geometry("300x100")
 
+game_start = [
+    [0, 0, 0, 0],
+    [0, 0, 2, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 2],
+]
+
+game_middle = [
+    [2,   0,   0,   0],
+    [32,  8,  0,   2],
+    [256,   128, 32, 0],
+    [512,   256,   16, 8],
+]
+
+game_advanced = [
+    [512,   16,   0,   0],
+    [32,  8,  4,   2],
+    [2048,   128, 64, 256],
+    [8192,   4096,   1024, 8],
+]
+
 #2. Créer le label
 def label_use(row, col):
     label = tk.Label(root,
