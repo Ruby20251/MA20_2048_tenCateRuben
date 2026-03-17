@@ -16,6 +16,17 @@ tk.background = "#252528" # Couleur de fond de la fenêtre principale
 alpha.configure(bg=tk.background)
 alpha.resizable(False, False) # Empêche la redimension de la fenêtre principale
 
+# Titre du jeu dans la fenêtre principale
+title_label = tk.Label(alpha, text="2048", font=("Helvetica", 48, "bold"), bg="#252528", fg="white")
+title_label.pack(pady=10)
+
+# ---- Sous‑titre (vide au début, s'affiche a la victoire) ----
+win_label = tk.Label(alpha, text="", font=("Helvetica", 1, "bold"), bg="#252528", fg="white")
+win_label.pack(pady=1)
+
+
+
+
 ## Ajout de mon icône personnalisée
 icone = os.path.dirname(__file__) #.dirname(__file__) donne le chemin du dossier du script en cours
 icon_path = os.path.join(icone, "assets", "letter_r.ico") # Construire le chemin complet de l'icône avec les variables ci-dessus
@@ -51,6 +62,16 @@ game_advanced = [
     [8192,   4096,   1024, 8],
 ]
 
+game_2048 = [
+    [512,   16,   0,   0],
+    [32,  8,  4,   2],
+    [1024,   1024, 64, 1024],
+    [8192,   4096,   1024, 8],
+]
+
+
+
+
 # Grille Graphique (labels Tkinter)
 labels_grid = [
     [None, None, None, None],
@@ -58,16 +79,32 @@ labels_grid = [
     [None, None, None, None],
     [None, None, None, None]]
 
+# Fonction de calcul de score :
+
+def calculer_score_debut(grille):
+    total = 0
+    for row in range(grid_size):
+        for col in range(grid_size):
+            total += grille[row][col]
+    return total
+
 # Choix du tableau à afficher
 
 #game = game_start      # début du jeu
-game = game_middle      # milieu du jeu
+game = game_2048      # milieu du jeu
 #game = game_advanced   # fin du jeu
+
+# Variable pour stocker le score du jeu
+score = calculer_score_debut(game)
+print("Score de début :", score)
+
+# Variable stockant si le jeu est gagné ou non 
+winner = False
 
 
 # ---- 3. Création d'un dictionnaire de couleur pour les blocs du jeu ----
 colors = {
-    0: "white", # Couleur de fond pour les cases vides
+    0: "#252528", # Couleur de fond pour les cases vides
     2: "#FFEECC",
     4: "#FFEEDD",
     8: "#FFD9B0",
@@ -86,6 +123,7 @@ colors = {
 # Comme j'ai des couleurs de texte différentes je crée aussi un dictionnaire pour la couleur du texte
 
 text_colors = {
+    0: "#252528",
     2: "black",
     4: "black",
     8: "white",
@@ -168,7 +206,7 @@ def valeur_tuile_aleatoire():
 # 4.5 Fonction nouvelle tuile / sprint 3
 def new_tile():
 
-    list_Null = [] # Liste pour stocker les positions des cases vides (valeur 0) dans la grille
+    liste_Null = [] # Liste pour stocker les positions des cases vides (valeur 0) dans la grille
     
     # Parcours de la grille pour trouver les cases vides (valeur Null ou 0)
     for line in range (grid_size):
@@ -176,24 +214,43 @@ def new_tile():
             
             # Si la case est vide (valeur 0), on ajoute sa position à la liste des cases vides
             if game[line][col] == 0:
-                list_Null.append((line, col)) # Créer un tuple des cases vides (ligne, colonne))
-                print("case vide trouvée à la position :", (line, col)) # Affiche la position de la case vide trouvée dans la console pour le débogage
+                liste_Null.append((line, col)) # Créer un tuple des cases vides (ligne, colonne))
+                
                 
                 # Si il n'y a pas de cases vides, on ne peut pas ajouter de nouvelle tuile
-                if len(list_Null) == 0: 
+                if len(liste_Null) == 0: 
                     return
                 
     # choix aléatoire d'une position parmi le tuple des cases vides
-    line, col = rand.choice(list_Null)
+    line, col = rand.choice(liste_Null)
+    # print("Position case vide choisi : :", (line, col)) #Affiche sur la console ou la case est ajoutée (débogage)
 
     # Choix aléatoire de la valeur de la nouvelle tuile (2 ou 4) avec la fonction valeur_tuile_aleatoire()
     new_tile_value = valeur_tuile_aleatoire()
+    # print("valeur tuile aléatoire choisie : ", valeur_tuile_aleatoire())
 
     # Placer la nouvelle tuile dans la grille logique à la position choisie 
     game[line][col] = new_tile_value
 
     draw_game(game) # Mise à jour de la grille graphique 
+    print(f"nouvelle tuile ajoutée à la position ({line}, {col}), de valeur : {new_tile_value}")
     
+    # Mise à jour du score total avec la nouvelle tuile
+    global score
+    score += new_tile_value
+    print("score du jeu :", score)
+
+# Fonction pour checker si il y a une victoire
+
+def did_i_win(game):
+    global winner
+    if score >= 2048 and winner == False:
+        for row in range(grid_size):
+            for col in range(grid_size):
+                if game [row][col] == 2048:
+                    winner = True
+                    win_label.config(text="YES YES YES !!! 2048 a été atteint !", font=18)
+                    win_label.pack_configure(pady=5)
 
 # 4.6 Fonction pour traiter les touches du clavier et faire bouger les blocs du jeu
 def key_pressed(event):
@@ -207,13 +264,14 @@ def key_pressed(event):
         haut()
     if (touche == "Down" or touche == "s" or touche == "S"):
         bas()
-    print (game)
-    print (mem_game)
+    # print (game)
+    # print (mem_game)
 
     # Si la grille a changé après le mouvement, on ajoute une nouvelle tuile avec la fonction new_tile()
     if mem_game != game:
         new_tile()
-        print("nouvelle tuile ajoutée")
+
+    did_i_win(game)
 
     if (touche == "Q" or touche == "q"):
         alpha.quit()
@@ -227,12 +285,14 @@ def droite():
     
     draw_game(game)
 
+
 # Fonction pour le bouton gauche en intégrant pack4
 def gauche():
     for row in range(grid_size):
         game[row][0], game[row][1], game[row][2], game[row][3] = pack4(game[row][0], game[row][1], game[row][2], game[row][3])
         
     draw_game(game)
+
     
 #Fonction pour le bouton haut en intégrant pack4
 def haut():
@@ -248,6 +308,7 @@ def bas():
         game[3][col], game[2][col], game[1][col], game[0][col]= pack4(game[3][col], game[2][col], game[1][col], game[0][col])
 
     draw_game(game)
+
 
 # ---- 5. Placement des labels dans la grille ----
 
