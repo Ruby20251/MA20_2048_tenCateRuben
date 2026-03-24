@@ -5,8 +5,10 @@
 
 #Librairies
 import tkinter as tk
+from tkinter import messagebox
 import os
 import random as rand
+
 
 # ---- 1. Configuration de la fenêtre principale tkinter ----
 
@@ -49,7 +51,7 @@ game_start = [
 ]
 
 game_middle = [
-    [2,   0,   32,   8],
+    [2,   2,   32,   8],
     [32,  8,  8,   8],
     [256,   128, 32, 0],
     [512,   256,   16, 8],
@@ -91,16 +93,21 @@ def calculer_score_debut(grille):
 # Choix du tableau à afficher
 
 #game = game_start      # début du jeu
-game = game_2048      # milieu du jeu
+# game = game_middle     # milieu du jeu
+game = game_2048        # 2048 dans le jeu
 #game = game_advanced   # fin du jeu
 
 # Variable pour stocker le score du jeu
 score = calculer_score_debut(game)
-print("Score de début :", score)
+                    
+# Afficher le score dans la fenêtre principale
+def label_score():
 
-# Variable stockant si le jeu est gagné ou non 
+    win_label.config(text=f"Score : {score}", font=("Helvetica", 30, "bold")) 
+    win_label.pack_configure(pady=5) 
+
+# Variables booleennes pour savoir si le jeu est gagné ou perdu.
 winner = False
-
 
 # ---- 3. Création d'un dictionnaire de couleur pour les blocs du jeu ----
 colors = {
@@ -238,19 +245,50 @@ def new_tile():
     # Mise à jour du score total avec la nouvelle tuile
     global score
     score += new_tile_value
+    label_score()
     print("score du jeu :", score)
 
 # Fonction pour checker si il y a une victoire
 
 def did_i_win(game):
     global winner
-    if score >= 2048 and winner == False:
+    if score >= 2048 and winner == False: # si le score est plus petit ou égal à 2048 et que la variable winner est False
         for row in range(grid_size):
             for col in range(grid_size):
-                if game [row][col] == 2048:
-                    winner = True
-                    win_label.config(text="YES YES YES !!! 2048 a été atteint !", font=18)
-                    win_label.pack_configure(pady=5)
+                if game [row][col] == 2048: # si il y a un 2048 dans le jeu
+                    winner = True # La variable booleenne winner devient True
+
+                    # Message box Tkinter
+                    question = messagebox.askquestion(
+                        "Victoire ! 2048 a été atteint",
+                        "Veux-tu continuer la partie ?",
+                    )
+                    if question == "no":
+                        alpha.destroy()
+                    else : return
+
+
+def did_i_lose(game):
+    for row in range(grid_size):
+        for col in range(grid_size):
+            if game [row][col] == 0:
+                return False
+                
+    # Recherche des jumaux horizontaux
+
+    for row in range(grid_size): # Pour chaque ligne en range 3
+        for col in range(grid_size -1): # Pour chaque colonne en range de 2 (pas 4) : 0, 1, 2 --> aide avec l'ia pour comprendre l'histoire du range
+           if game [row][col] == game [row][col+1]:
+                return False
+           
+
+    for col in range(grid_size): # Pour chaque ligne en range 3
+        for row in range(grid_size -1): # Pour chaque colonne en range de 2 (pas 4) : 0, 1, 2 --> aide avec l'ia pour comprendre l'histoire du range
+           if game [row][col] == game [row+1][col]:
+                return False
+
+   
+    return True
 
 # 4.6 Fonction pour traiter les touches du clavier et faire bouger les blocs du jeu
 def key_pressed(event):
@@ -271,10 +309,19 @@ def key_pressed(event):
     if mem_game != game:
         new_tile()
 
+    # Appel de Fonction pour checker si on a gagné
     did_i_win(game)
 
-    if (touche == "Q" or touche == "q"):
-        alpha.quit()
+    # Appel de Fonction pour chercher si on a perdu
+    if did_i_lose(game) : # Le if est vrai avec True et va exécuter la suite
+        
+        # Message box Tkinter (warning)
+        messagebox.showwarning(
+            "Hah gros loser !",
+            "Tu as perdu la partie"
+        )
+        alpha.destroy()
+        print("Hah gros loser !")
 
 # -- 4.7 Fonctions pour compresser les valeurs dans la bonne direction --
 
