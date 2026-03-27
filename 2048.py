@@ -22,6 +22,10 @@ alpha.resizable(False, False) # Empêche la redimension de la fenêtre principal
 title_label = tk.Label(alpha, text="2048", font=("Helvetica", 48, "bold"), bg="#252528", fg="white")
 title_label.pack(pady=10)
 
+# Label pour afficher le meilleur score
+best_score_label = tk.Label(alpha, text="Meilleur score : 0", font=("Helvetica", 16, "bold"), bg="#252528", fg="white")
+best_score_label.pack(pady=5)
+
 # ---- Sous‑titre (vide au début, s'affiche a la victoire) ----
 win_label = tk.Label(alpha, text="", font=("Helvetica", 1, "bold"), bg="#252528", fg="white")
 win_label.pack(pady=1)
@@ -47,7 +51,7 @@ game_start = [
     [0, 0, 0, 0],
     [0, 0, 2, 0],
     [0, 0, 0, 0],
-    [0, 0, 0, 2],
+    [2, 0, 0, 0],
 ]
 
 game_middle = [
@@ -72,8 +76,6 @@ game_2048 = [
 ]
 
 
-
-
 # Grille Graphique (labels Tkinter)
 labels_grid = [
     [None, None, None, None],
@@ -92,13 +94,34 @@ def calculer_score_debut(grille):
 
 # Choix du tableau à afficher
 
-#game = game_start      # début du jeu
-# game = game_middle     # milieu du jeu
-game = game_2048        # 2048 dans le jeu
-#game = game_advanced   # fin du jeu
+game = game_start      # début du jeu
+#game = game_middle    # milieu du jeu
+#game = game_2048      # 2048 dans le jeu
+#game = game_advanced  # fin du jeu
 
 # Variable pour stocker le score du jeu
 score = calculer_score_debut(game)
+
+# Variable pour le meilleur score
+best_score = 0
+
+# Fonction pour mettre à jour l'affichage du meilleur score
+def update_best_score_display():
+    best_score_label.config(text=f"Meilleur score : {best_score}")
+
+# Fonction pour recommencer la partie depuis le début
+def new_game():
+    global game, score, winner
+    game = [
+        [0, 0, 0, 0],
+        [0, 0, 2, 0],
+        [0, 0, 0, 0],
+        [2, 0, 0, 0],
+    ]
+    score = calculer_score_debut(game)  # Score réinitialisé
+    winner = False  # Si winner était sur True, c'est False à nouveau
+    win_label.config(text="")  # Effacer le texte de victoire
+    draw_game(game)
                     
 # Afficher le score dans la fenêtre principale
 def label_score():
@@ -240,23 +263,28 @@ def new_tile():
     game[line][col] = new_tile_value
 
     draw_game(game) # Mise à jour de la grille graphique 
-    print(f"nouvelle tuile ajoutée à la position ({line}, {col}), de valeur : {new_tile_value}")
+    #print(f"nouvelle tuile ajoutée à la position ({line}, {col}), de valeur : {new_tile_value}")
     
     # Mise à jour du score total avec la nouvelle tuile
     global score
     score += new_tile_value
     label_score()
-    print("score du jeu :", score)
+    #print("score du jeu :", score)
 
 # Fonction pour checker si il y a une victoire
 
 def did_i_win(game):
-    global winner
+    global winner, best_score
     if score >= 2048 and winner == False: # si le score est plus petit ou égal à 2048 et que la variable winner est False
         for row in range(grid_size):
             for col in range(grid_size):
                 if game [row][col] == 2048: # si il y a un 2048 dans le jeu
                     winner = True # La variable booleenne winner devient True
+
+                    # Mettre à jour le meilleur score si nécessaire
+                    if score > best_score:
+                        best_score = score
+                        update_best_score_display()
 
                     # Message box Tkinter
                     question = messagebox.askquestion(
@@ -315,13 +343,21 @@ def key_pressed(event):
     # Appel de Fonction pour chercher si on a perdu
     if did_i_lose(game) : # Le if est vrai avec True et va exécuter la suite
         
-        # Message box Tkinter (warning)
-        messagebox.showwarning(
+        # Mettre à jour le meilleur score si nécessaire
+        global best_score
+        if score > best_score:
+            best_score = score
+            update_best_score_display()
+        
+        # Message box Tkinter (askyesno) pour donner la possibilité de recommener
+        recommencer = messagebox.askyesno(
             "Hah gros loser !",
-            "Tu as perdu la partie"
+            "Tu as perdu la partie. \nRecommencer ?"
         )
-        alpha.destroy()
-        print("Hah gros loser !")
+        if recommencer:
+            new_game()
+        else :
+            alpha.destroy()
 
 # -- 4.7 Fonctions pour compresser les valeurs dans la bonne direction --
 
@@ -367,6 +403,9 @@ for row in range(grid_size):
 
 
 # --- Programme principal ---
+
+# Initialiser l'affichage du meilleur score
+update_best_score_display()
 
 # traitement de touches à clavier et boucle 
 alpha.bind('<Key>', key_pressed)
